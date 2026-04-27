@@ -26,6 +26,10 @@ export const api = {
   updatePrice:  (id, v)  => apiFetch(`/investments/${id}/price`,  { method: 'PATCH', body: JSON.stringify({ newPrice: v }) }),
   registerDividend: (id, v)  => apiFetch(`/investments/${id}/dividends`,{ method: 'POST',  body: JSON.stringify({ amount: v }) }),
   remove:           (id)     => apiFetch(`/investments/${id}`,          { method: 'DELETE' }),
+  // Transaction methods
+  createTransaction:    (id, body) => apiFetch(`/investments/${id}/transactions`, { method: 'POST', body: JSON.stringify(body) }),
+  updateTransaction: (id, transactionId, body) => apiFetch(`/investments/${id}/transactions/${transactionId}`, { method: 'PUT', body: JSON.stringify(body) }),
+  removeTransaction:  (id, transactionId) => apiFetch(`/investments/${id}/transactions/${transactionId}`, { method: 'DELETE' }),
 }
 
 // ── Main hook ────────────────────────────────────────────────────────────

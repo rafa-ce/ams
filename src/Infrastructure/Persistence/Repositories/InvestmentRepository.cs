@@ -17,23 +17,27 @@ public sealed class InvestmentRepository : IInvestmentRepository
 
     public async Task<Investment?> GetByIdAsync(int id, CancellationToken ct = default)
         => await _ctx.Investments
+                     .Include(i => i.Transactions)
                      .AsNoTracking()
                      .FirstOrDefaultAsync(i => i.Id == id, ct);
 
     public async Task<IReadOnlyList<Investment>> GetAllAsync(CancellationToken ct = default)
         => await _ctx.Investments
+                     .Include(i => i.Transactions)
                      .AsNoTracking()
                      .OrderBy(i => i.Name)
                      .ToListAsync(ct);
 
     public async Task<IReadOnlyList<FixedIncome>> GetFixedIncomeAsync(CancellationToken ct = default)
         => await _ctx.FixedIncomes
+                     .Include(i => i.Transactions)
                      .AsNoTracking()
                      .OrderBy(i => i.MaturityDate)
                      .ToListAsync(ct);
 
     public async Task<IReadOnlyList<VariableIncome>> GetVariableIncomeAsync(CancellationToken ct = default)
         => await _ctx.VariableIncomes
+                     .Include(i => i.Transactions)
                      .AsNoTracking()
                      .OrderBy(i => i.Ticker)
                      .ToListAsync(ct);

@@ -27,4 +27,12 @@ public class Transaction
         Shares = shares;
         UnitPrice = unitPrice;
     }
+
+    public void Update(decimal amount, DateTime purchaseDate, decimal? shares = null, decimal? unitPrice = null)
+    {
+        Amount = amount;
+        PurchaseDate = purchaseDate;
+        Shares = shares;
+        UnitPrice = unitPrice;
+    }
 }

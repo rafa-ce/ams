@@ -6,6 +6,14 @@ namespace InvestimentosPessoais.Application.DTOs;
 //  RESPONSE DTOs
 // ═══════════════════════════════════════════════════════════════════════════
 
+public record TransactionDto(
+    int Id,
+    decimal Amount,
+    DateTime PurchaseDate,
+    decimal? Shares,
+    decimal? UnitPrice
+);
+
 public record InvestmentDto(
     int Id,
     string InvestmentType,
@@ -33,7 +41,9 @@ public record InvestmentDto(
     decimal? AveragePrice,
     decimal? CurrentPrice,
     decimal? DividendsReceived,
-    decimal? TotalReturn
+    decimal? TotalReturn,
+    // Transactions
+    IReadOnlyList<TransactionDto>? Transactions
 );
 
 public record PortfolioSummaryDto(
@@ -119,12 +129,30 @@ public record UpdatePriceRequest(decimal NewPrice);
 
 public record RegisterDividendRequest(decimal Amount);
 
+// Transaction Request DTOs
+public record CreateTransactionRequest(
+    decimal Amount,
+    DateTime PurchaseDate,
+    decimal? Shares = null,
+    decimal? UnitPrice = null
+);
+
+public record UpdateTransactionRequest(
+    decimal Amount,
+    DateTime PurchaseDate,
+    decimal? Shares = null,
+    decimal? UnitPrice = null
+);
+
 // ═══════════════════════════════════════════════════════════════════════════
 //  STATIC MAPPER
 // ═══════════════════════════════════════════════════════════════════════════
 
 public static class InvestmentMapper
 {
+    public static TransactionDto ToTransactionDto(Transaction t) =>
+        new(t.Id, t.Amount, t.PurchaseDate, t.Shares, t.UnitPrice);
+
     public static InvestmentDto ToDto(Investment inv) => inv switch
     {
         FixedIncome fi => new InvestmentDto(
@@ -136,7 +164,9 @@ public static class InvestmentMapper
             // FI
             fi.Type, fi.Indexer, fi.ContractedRate, fi.IndexerPercentage,
             // VI (nulls)
-            null, null, null, null, null, null, null),
+            null, null, null, null, null, null, null,
+            // Transactions
+            fi.Transactions.Select(ToTransactionDto).ToList()),
 
         VariableIncome vi => new InvestmentDto(
             vi.Id, "VariableIncome", vi.Name, vi.Institution,
@@ -148,7 +178,9 @@ public static class InvestmentMapper
             null, null, null, null,
             // VI
             vi.Category, vi.Ticker, vi.Shares, vi.AveragePrice,
-            vi.CurrentPrice, vi.DividendsReceived, vi.TotalReturn),
+            vi.CurrentPrice, vi.DividendsReceived, vi.TotalReturn,
+            // Transactions
+            vi.Transactions.Select(ToTransactionDto).ToList()),
 
         _ => throw new InvalidOperationException($"Unmapped type: {inv.GetType().Name}")
     };

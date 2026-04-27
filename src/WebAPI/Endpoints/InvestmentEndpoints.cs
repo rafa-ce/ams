@@ -2,6 +2,7 @@ using InvestimentosPessoais.Application.DTOs;
 using InvestimentosPessoais.Domain.Entities;
 using InvestimentosPessoais.Domain.Exceptions;
 using InvestimentosPessoais.Domain.Interfaces;
+using InvestimentosPessoais.Infrastructure.Persistence;
 
 namespace InvestimentosPessoais.WebAPI.Endpoints;
 
@@ -254,6 +255,101 @@ public static class InvestmentEndpoints
         })
         .WithName("RegisterDividend")
         .WithSummary("Registers receipt of dividend/yield")
+        .WithOpenApi();
+
+        // ── POST /api/investments/{id}/transactions ───────────────────────────
+        api.MapPost("/{id:int}/transactions", async (
+            int id,
+            CreateTransactionRequest req,
+            IInvestmentRepository repo,
+            CancellationToken ct) =>
+        {
+            var inv = await repo.GetByIdAsync(id, ct);
+            if (inv is null)
+                return Results.NotFound(new { message = $"Investment {id} not found." });
+
+            try
+            {
+                var transaction = new Transaction(0, req.Amount, req.PurchaseDate, req.Shares, req.UnitPrice);
+                inv.AddTransaction(transaction);
+                repo.Update(inv);
+                await repo.SaveChangesAsync(ct);
+                return Results.Created(
+                    $"/api/investments/{id}/transactions/{transaction.Id}",
+                    InvestmentMapper.ToTransactionDto(transaction));
+            }
+            catch (DomainException ex)
+            {
+                return Results.BadRequest(new { message = ex.Message });
+            }
+        })
+        .WithName("CreateTransaction")
+        .WithSummary("Adds a new transaction to an investment")
+        .WithOpenApi();
+
+        // ── PUT /api/investments/{id}/transactions/{transactionId} ─────────────
+        api.MapPut("/{id:int}/transactions/{transactionId:int}", async (
+            int id,
+            int transactionId,
+            UpdateTransactionRequest req,
+            IInvestmentRepository repo,
+            AppDbContext ctx,
+            CancellationToken ct) =>
+        {
+            var inv = await repo.GetByIdAsync(id, ct);
+            if (inv is null)
+                return Results.NotFound(new { message = $"Investment {id} not found." });
+
+            var transaction = inv.Transactions.FirstOrDefault(t => t.Id == transactionId);
+            if (transaction is null)
+                return Results.NotFound(new { message = $"Transaction {transactionId} not found." });
+
+            try
+            {
+                // Update transaction properties via DbContext
+                var dbTransaction = await ctx.Transactions.FindAsync(new object[] { transactionId }, ct);
+                if (dbTransaction is null)
+                    return Results.NotFound(new { message = $"Transaction {transactionId} not found." });
+
+                dbTransaction.Update(req.Amount, req.PurchaseDate, req.Shares, req.UnitPrice);
+                await ctx.SaveChangesAsync(ct);
+                return Results.Ok(InvestmentMapper.ToTransactionDto(dbTransaction));
+            }
+            catch (DomainException ex)
+            {
+                return Results.BadRequest(new { message = ex.Message });
+            }
+        })
+        .WithName("UpdateTransaction")
+        .WithSummary("Updates an existing transaction")
+        .WithOpenApi();
+
+        // ── DELETE /api/investments/{id}/transactions/{transactionId} ────────
+        api.MapDelete("/{id:int}/transactions/{transactionId:int}", async (
+            int id,
+            int transactionId,
+            IInvestmentRepository repo,
+            AppDbContext ctx,
+            CancellationToken ct) =>
+        {
+            var inv = await repo.GetByIdAsync(id, ct);
+            if (inv is null)
+                return Results.NotFound(new { message = $"Investment {id} not found." });
+
+            var transaction = inv.Transactions.FirstOrDefault(t => t.Id == transactionId);
+            if (transaction is null)
+                return Results.NotFound(new { message = $"Transaction {transactionId} not found." });
+
+            var dbTransaction = await ctx.Transactions.FindAsync(new object[] { transactionId }, ct);
+            if (dbTransaction is null)
+                return Results.NotFound(new { message = $"Transaction {transactionId} not found." });
+
+            ctx.Transactions.Remove(dbTransaction);
+            await ctx.SaveChangesAsync(ct);
+            return Results.NoContent();
+        })
+        .WithName("RemoveTransaction")
+        .WithSummary("Removes a transaction from an investment")
         .WithOpenApi();
 
         // ── DELETE /api/investments/{id} ────────────────────────────────────

@@ -61,7 +61,25 @@ const resources = {
         return: "Return",
         actions: "Actions",
         empty: "No investments found.",
-        deleteConfirm: "Are you sure you want to delete this investment?"
+        deleteConfirm: "Are you sure you want to delete this investment?",
+        expand: "Expand to see transactions",
+        collapse: "Collapse transactions",
+        noTransactions: "No transactions recorded.",
+        transactionDate: "Date",
+        transactionAmount: "Amount",
+        shares: "Shares",
+        unitPrice: "Unit Price",
+        avgPrice: "Avg P",
+        viewOnly: "View",
+        addTransaction: "Add Transaction"
+      },
+      transactionModal: {
+        title: "Add Transaction",
+        asset: "Asset",
+        amount: "Amount",
+        date: "Purchase Date",
+        shares: "Quantity",
+        unitPriceHint: "Unit price will be calculated automatically"
       },
       format: {
         fixedIncomeDetails: "{{type}} • {{indexer}}",
@@ -128,7 +146,25 @@ const resources = {
         return: "Rendimento",
         actions: "Ações",
         empty: "Nenhum investimento encontrado.",
-        deleteConfirm: "Tem certeza que deseja excluir este investimento?"
+        deleteConfirm: "Tem certeza que deseja excluir este investimento?",
+        expand: "Expandir para ver transações",
+        collapse: "Recolher transações",
+        noTransactions: "Nenhuma transação registrada.",
+        transactionDate: "Data",
+        transactionAmount: "Valor",
+        shares: "Cotas",
+        unitPrice: "Preço Unit.",
+        avgPrice: "PM",
+        viewOnly: "Ver",
+        addTransaction: "Adicionar Transação"
+      },
+      transactionModal: {
+        title: "Adicionar Transação",
+        asset: "Ativo",
+        amount: "Valor",
+        date: "Data da Compra",
+        shares: "Quantidade",
+        unitPriceHint: "O preço unitário será calculado automaticamente"
       },
       format: {
         fixedIncomeDetails: "{{type}} • {{indexer}}",
