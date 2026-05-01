@@ -96,6 +96,24 @@ public record CreateVariableIncomeRequest(
     string Notes = ""
 );
 
+public record CreateInvestmentRequest(
+    string Name,
+    string Institution,
+    decimal InvestedAmount,
+    DateTime InvestmentDate,
+    string Category,
+    decimal? CurrentValue = null,
+    decimal? CurrentPrice = null,
+    decimal? Shares = null,
+    string? Ticker = null,
+    string? Indexer = null,
+    decimal? ContractedRate = null,
+    decimal? IndexerPercentage = null,
+    DateTime? MaturityDate = null,
+    decimal? DividendsReceived = null,
+    string Notes = ""
+);
+
 public record UpdateFixedIncomeRequest(
     string Name,
     string Institution,

@@ -8,6 +8,25 @@ namespace InvestimentosPessoais.WebAPI.Endpoints;
 
 public static class InvestmentEndpoints
 {
+    private static readonly string[] FixedIncomeCategories = new[]
+    {
+        "CDB",
+        "Treasury Selic",
+        "Treasury IPCA+",
+        "Treasury Prefixed",
+        "LCI",
+        "LCA",
+        "CRI",
+        "CRA",
+        "Debenture"
+    };
+
+    private static bool IsFixedIncomeCategory(string category)
+        => FixedIncomeCategories.Contains(category, StringComparer.OrdinalIgnoreCase);
+
+    private static string NormalizeCategory(string category)
+        => category?.Trim() ?? string.Empty;
+
     public static WebApplication MapInvestmentEndpoints(this WebApplication app)
     {
         var api = app.MapGroup("/api/investments")
@@ -97,6 +116,64 @@ public static class InvestmentEndpoints
         })
         .WithName("CreateVariableIncome")
         .WithSummary("Registers a new Variable Income investment")
+        .WithOpenApi();
+
+        api.MapPost("/", async (
+            CreateInvestmentRequest req,
+            IInvestmentRepository repo,
+            CancellationToken ct) =>
+        {
+            var category = NormalizeCategory(req.Category);
+            try
+            {
+                if (IsFixedIncomeCategory(category))
+                {
+                    if (req.CurrentValue is null)
+                        return Results.BadRequest(new { message = "CurrentValue is required for fixed income assets." });
+
+                    var entity = new FixedIncome(
+                        req.Name,
+                        req.Institution,
+                        req.CurrentValue.Value,
+                        category,
+                        req.Indexer ?? "CDI",
+                        req.ContractedRate ?? 0m,
+                        req.IndexerPercentage,
+                        req.MaturityDate,
+                        req.Notes);
+
+                    entity.AddTransaction(new Transaction(0, req.InvestedAmount, req.InvestmentDate));
+                    await repo.AddAsync(entity, ct);
+                    await repo.SaveChangesAsync(ct);
+
+                    return Results.Created($"/api/investments/{entity.Id}", InvestmentMapper.ToDto(entity));
+                }
+
+                if (req.CurrentPrice is null || req.Shares is null || string.IsNullOrWhiteSpace(req.Ticker))
+                    return Results.BadRequest(new { message = "CurrentPrice, Shares and Ticker are required for variable income assets." });
+
+                var asset = new VariableIncome(
+                    req.Name,
+                    req.Institution,
+                    req.CurrentPrice.Value,
+                    category,
+                    req.Ticker,
+                    req.DividendsReceived ?? 0m,
+                    req.Notes);
+
+                asset.AddTransaction(new Transaction(0, req.InvestedAmount, req.InvestmentDate, req.Shares.Value, Math.Round(req.InvestedAmount / req.Shares.Value, 6))); 
+                await repo.AddAsync(asset, ct);
+                await repo.SaveChangesAsync(ct);
+
+                return Results.Created($"/api/investments/{asset.Id}", InvestmentMapper.ToDto(asset));
+            }
+            catch (DomainException ex)
+            {
+                return Results.BadRequest(new { message = ex.Message });
+            }
+        })
+        .WithName("CreateInvestment")
+        .WithSummary("Registers a new investment using the selected category")
         .WithOpenApi();
 
         // ── PUT /api/investments/{id}/fixed-income ────────────────────────────

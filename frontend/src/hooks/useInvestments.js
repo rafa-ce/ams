@@ -18,6 +18,7 @@ async function apiFetch(path, options = {}) {
 export const api = {
   list:            ()       => apiFetch('/investments'),
   get:             (id)     => apiFetch(`/investments/${id}`),
+  createInvestment:    (body)   => apiFetch('/investments', { method: 'POST',  body: JSON.stringify(body) }),
   createFixedIncome:    (body)   => apiFetch('/investments/fixed-income',    { method: 'POST',  body: JSON.stringify(body) }),
   createVariableIncome:(body)   => apiFetch('/investments/variable-income', { method: 'POST',  body: JSON.stringify(body) }),
   updateFixedIncome:    (id, body) => apiFetch(`/investments/${id}/fixed-income`, { method: 'PUT', body: JSON.stringify(body) }),
