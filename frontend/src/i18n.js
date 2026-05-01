@@ -49,7 +49,21 @@ const resources = {
         save: "Save",
         saving: "Saving...",
         update: "Update",
-        updating: "Updating..."
+        updating: "Updating...",
+        commonInfo: "Common Information",
+        fixedIncomeDetails: "Fixed Income Details",
+        variableIncomeDetails: "Variable Income Details",
+        maturityDate: "Maturity Date",
+        indexer: "Indexer",
+        rate: "Rate (% p.a.)",
+        indexerPercentage: "% of Indexer",
+        unitPriceLabel: "Unit Price",
+        quantityLabel: "Quantity",
+        dividendsReceived: "Dividends Received",
+        investedCalculation: "Invested Amount will be calculated as Unit Price × Quantity",
+        notes: "Notes",
+        searchCategory: "Search category...",
+        selectValidCategory: "Please select a valid category."
       },
       table: {
         search: "Search investments...",
@@ -73,7 +87,8 @@ const resources = {
         unitPrice: "Unit Price",
         avgPrice: "Avg P",
         viewOnly: "View",
-        addTransaction: "Add Transaction"
+        addTransaction: "Add Transaction",
+        type: "Type"
       },
       transactionModal: {
         title: "Add Transaction",
@@ -87,6 +102,24 @@ const resources = {
         fixedIncomeDetails: "{{type}} • {{indexer}}",
         variableIncomeDetails: "{{category}} • {{shares}} shares",
         avgPrice: "Avg P: {{price}}"
+      },
+      categories: {
+        // Fixed Income
+        "CDB": "CDB",
+        "Treasury Selic": "Treasury Selic",
+        "Treasury IPCA+": "Treasury IPCA+",
+        "Treasury Prefixed": "Treasury Prefixed",
+        "LCI": "LCI",
+        "LCA": "LCA",
+        "CRI": "CRI",
+        "CRA": "CRA",
+        "Debenture": "Debenture",
+        // Variable Income
+        "Stocks": "Stocks",
+        "REITs": "REITs",
+        "ETFs": "ETFs",
+        "BDRs": "BDRs",
+        "Crypto": "Crypto"
       }
     }
   },
@@ -134,7 +167,21 @@ const resources = {
         save: "Salvar",
         saving: "Salvando...",
         update: "Atualizar",
-        updating: "Atualizando..."
+        updating: "Atualizando...",
+        commonInfo: "Informações Comuns",
+        fixedIncomeDetails: "Detalhes da Renda Fixa",
+        variableIncomeDetails: "Detalhes da Renda Variável",
+        maturityDate: "Data de Vencimento",
+        indexer: "Indexador",
+        rate: "Taxa (% a.a.)",
+        indexerPercentage: "% do Indexador",
+        unitPriceLabel: "Preço Unitário",
+        quantityLabel: "Quantidade",
+        dividendsReceived: "Dividendos Recebidos",
+        investedCalculation: "O valor aplicado será calculado como Preço Unitário × Quantidade",
+        notes: "Observações",
+        searchCategory: "Buscar categoria...",
+        selectValidCategory: "Por favor, selecione uma categoria válida."
       },
       table: {
         search: "Buscar investimentos...",
@@ -158,7 +205,8 @@ const resources = {
         unitPrice: "Preço Unit.",
         avgPrice: "PM",
         viewOnly: "Ver",
-        addTransaction: "Adicionar Transação"
+        addTransaction: "Adicionar Transação",
+        type: "Tipo"
       },
       transactionModal: {
         title: "Adicionar Transação",
@@ -172,6 +220,42 @@ const resources = {
         fixedIncomeDetails: "{{type}} • {{indexer}}",
         variableIncomeDetails: "{{category}} • {{shares}} cotas",
         avgPrice: "PM: {{price}}"
+      },
+      categories: {
+        // Fixed Income
+        "CDB": "CDB",
+        "Treasury Selic": "Tesouro Selic",
+        "Treasury IPCA+": "Tesouro IPCA+",
+        "Treasury Prefixed": "Tesouro Prefixado",
+        "LCI": "LCI",
+        "LCA": "LCA",
+        "CRI": "CRI",
+        "CRA": "CRA",
+        "Debenture": "Debênture",
+        // Variable Income
+        "Stocks": "Ações",
+        "REITs": "FIIs",
+        "ETFs": "ETFs",
+        "BDRs": "BDRs",
+        "Crypto": "Cripto"
+      },
+      categories: {
+        // Fixed Income
+        "CDB": "CDB",
+        "Treasury Selic": "Tesouro Selic",
+        "Treasury IPCA+": "Tesouro IPCA+",
+        "Treasury Prefixed": "Tesouro Prefixado",
+        "LCI": "LCI",
+        "LCA": "LCA",
+        "CRI": "CRI",
+        "CRA": "CRA",
+        "Debenture": "Debênture",
+        // Variable Income
+        "Stocks": "Ações",
+        "REITs": "FIIs",
+        "ETFs": "ETFs",
+        "BDRs": "BDRs",
+        "Crypto": "Cripto"
       }
     }
   }

@@ -68,10 +68,13 @@ export const Icon = {
   ),
 }
 
+import { useTranslation } from 'react-i18next'
+
 // ── Type Badge ─────────────────────────────────────────────────────────────
 export function TypeBadge({ type, typeName, category }) {
+  const { t } = useTranslation()
   const isFixed = type === 'FixedIncome'
-  const label = isFixed ? (typeName ?? 'Fixed Income') : (category ?? 'Variable Inc.')
+  const label = isFixed ? (typeName ? t(`categories.${typeName}`, typeName) : t('summary.fixedIncome')) : (category ? t(`categories.${category}`, category) : t('summary.variableIncome'))
   return (
     <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold tracking-wide
       ${isFixed

@@ -67,7 +67,7 @@ export function AddModal({ onClose, onSuccess, initialData }) {
   const selectedCategory = findCategoryOption(form.category) || findCategoryOption(categoryInput) || CATEGORY_OPTIONS[0]
   const isFixedIncome = selectedCategory.investmentType === 'FixedIncome'
   const filteredCategories = CATEGORY_OPTIONS.filter(option =>
-    normalizeText(option.label).includes(normalizeText(categoryInput))
+    normalizeText(t(`categories.${option.label}`, option.label)).includes(normalizeText(categoryInput))
   )
 
   const submit = async (e) => {
@@ -77,7 +77,7 @@ export function AddModal({ onClose, onSuccess, initialData }) {
     try {
       const selected = findCategoryOption(form.category) || findCategoryOption(categoryInput)
       if (!selected) {
-        setError('Please select a valid category.')
+        setError(t('addModal.selectValidCategory'))
         return
       }
 
@@ -143,7 +143,7 @@ export function AddModal({ onClose, onSuccess, initialData }) {
               }}
               onFocus={() => setCategoryMenuOpen(true)}
               onBlur={() => setTimeout(() => setCategoryMenuOpen(false), 120)}
-              placeholder="Search category..."
+              placeholder={t('addModal.searchCategory')}
               autoComplete="off"
             />
             {categoryMenuOpen && filteredCategories.length > 0 && (
@@ -157,7 +157,7 @@ export function AddModal({ onClose, onSuccess, initialData }) {
                       setCategoryMenuOpen(false)
                     }}
                     className="w-full px-3 py-2 text-left text-sm text-white transition-colors hover:bg-slate-800">
-                    {option.label}
+                    {t(`categories.${option.label}`, option.label)}
                   </button>
                 ))}
               </div>
@@ -167,7 +167,7 @@ export function AddModal({ onClose, onSuccess, initialData }) {
 
         {/* Common Fields */}
         <div className="border-t border-slate-700 pt-4">
-          <h3 className="text-sm font-semibold text-slate-300 mb-3">Common Information</h3>
+          <h3 className="text-sm font-semibold text-slate-300 mb-3">{t('addModal.commonInfo')}</h3>
           <div className="grid grid-cols-2 gap-3">
             <Field label={t('addModal.name')}>
               <Input value={form.name} onChange={set('name')} required />
@@ -181,7 +181,7 @@ export function AddModal({ onClose, onSuccess, initialData }) {
               <Input type="date" value={form.investmentDate} onChange={set('investmentDate')} required />
             </Field>
             {isFixedIncome && (
-              <Field label="Maturity Date">
+              <Field label={t('addModal.maturityDate')}>
                 <Input type="date" value={form.maturityDate} onChange={set('maturityDate')} />
               </Field>
             )}
@@ -191,7 +191,7 @@ export function AddModal({ onClose, onSuccess, initialData }) {
         {/* Type-Specific Fields */}
         <div className="border-t border-slate-700 pt-4">
           <h3 className="text-sm font-semibold text-slate-300 mb-3">
-            {isFixedIncome ? 'Fixed Income Details' : 'Variable Income Details'}
+            {isFixedIncome ? t('addModal.fixedIncomeDetails') : t('addModal.variableIncomeDetails')}
           </h3>
           
           {isFixedIncome ? (
@@ -207,18 +207,18 @@ export function AddModal({ onClose, onSuccess, initialData }) {
                 </Field>
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <Field label="Indexer">
+                <Field label={t('addModal.indexer')}>
                   <Select value={form.indexer} onChange={set('indexer')}>
                     {INDEXERS_FI.map(i => <option key={i}>{i}</option>)}
                   </Select>
                 </Field>
-                <Field label="Rate (% p.a.)">
+                <Field label={t('addModal.rate')}>
                   <Input type="number" step="0.01" value={form.contractedRate}
                     onChange={set('contractedRate')} placeholder="Ex: 12.5" />
                 </Field>
               </div>
               <div className="grid grid-cols-1 gap-3">
-                <Field label="% of Indexer">
+                <Field label={t('addModal.indexerPercentage')}>
                   <Input type="number" step="0.01" value={form.indexerPercentage}
                     onChange={set('indexerPercentage')} placeholder="Ex: 110" />
                 </Field>
@@ -231,29 +231,29 @@ export function AddModal({ onClose, onSuccess, initialData }) {
                   <Input value={form.ticker} onChange={set('ticker')}
                     placeholder="Ex: PETR4" style={{ textTransform: 'uppercase' }} required />
                 </Field>
-                <Field label="Unit Price">
+                <Field label={t('addModal.unitPriceLabel')}>
                   <Input type="number" step="0.000001" min="0" value={form.unitPrice}
                     onChange={set('unitPrice')} placeholder="0.000000" required />
                 </Field>
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <Field label="Quantity">
+                <Field label={t('addModal.quantityLabel')}>
                   <Input type="number" step="0.000001" min="0" value={form.shares}
                     onChange={set('shares')} placeholder="0" required disabled={isEdit} />
                 </Field>
-                <Field label="Dividends Received">
+                <Field label={t('addModal.dividendsReceived')}>
                   <Input type="number" step="0.01" min="0" value={form.dividendsReceived}
                     onChange={set('dividendsReceived')} placeholder="0.00" />
                 </Field>
               </div>
               <div className="text-xs text-slate-500 mt-2">
-                Invested Amount will be calculated as Unit Price × Quantity
+                {t('addModal.investedCalculation')}
               </div>
             </>
           )}
         </div>
 
-        <Field label="Notes">
+        <Field label={t('addModal.notes')}>
           <Input value={form.notes} onChange={set('notes')} placeholder="Optional" />
         </Field>
 
