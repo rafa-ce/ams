@@ -86,8 +86,7 @@ public record CreateFixedIncomeRequest(
 public record CreateVariableIncomeRequest(
     string Name,
     string Institution,
-    decimal InvestedAmount,
-    decimal CurrentPrice,
+    decimal UnitPrice,
     decimal Shares,
     DateTime InvestmentDate,
     string Category,
@@ -131,9 +130,7 @@ public record UpdateFixedIncomeRequest(
 public record UpdateVariableIncomeRequest(
     string Name,
     string Institution,
-    decimal InvestedAmount,
     decimal CurrentPrice,
-    decimal Shares,
     DateTime InvestmentDate,
     string Category,
     string Ticker,

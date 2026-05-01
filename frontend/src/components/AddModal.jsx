@@ -46,18 +46,19 @@ export function AddModal({ onClose, onSuccess, initialData }) {
   const [form, setForm] = useState({
     name: initialData?.name || '', 
     institution: initialData?.institution || '', 
+    investmentDate: initialData ? formatDateForInput(initialData.investmentDate) : today(), 
+    notes: initialData?.notes || '',
+    // Fixed Income specific
     investedAmount: initialData?.investedAmount || '', 
     currentValue: initialData?.currentValue || '',
-    investmentDate: initialData ? formatDateForInput(initialData.investmentDate) : today(), 
     maturityDate: initialData?.maturityDate ? formatDateForInput(initialData.maturityDate) : '', 
-    notes: initialData?.notes || '',
     indexer: initialData?.indexer || 'CDI', 
     contractedRate: initialData?.contractedRate || '', 
     indexerPercentage: initialData?.indexerPercentage || '',
-    category: initialCategory,
-    ticker: initialData?.ticker || '', 
-    currentPrice: initialData?.currentPrice || '', 
+    // Variable Income specific
+    unitPrice: initialData?.currentPrice || '', 
     shares: initialData?.shares || '', 
+    ticker: initialData?.ticker || '', 
     dividendsReceived: initialData?.dividendsReceived || '0',
   })
 
@@ -86,7 +87,7 @@ export function AddModal({ onClose, onSuccess, initialData }) {
           institution:        form.institution,
           investedAmount:      parseFloat(form.investedAmount),
           investmentDate:      form.investmentDate,
-          category:          selected.label,
+          type:               selected.label,
           currentValue:         parseFloat(form.currentValue) || parseFloat(form.investedAmount),
           indexer:          form.indexer,
           contractedRate:     parseFloat(form.contractedRate) || 0,
@@ -95,22 +96,24 @@ export function AddModal({ onClose, onSuccess, initialData }) {
           notes:        form.notes,
         };
         if (isEdit) await api.updateFixedIncome(initialData.id, payload);
-        else await api.createInvestment(payload);
+        else await api.createFixedIncome(payload);
       } else {
+        const unitPrice = parseFloat(form.unitPrice);
+        const shares = parseFloat(form.shares);
+        const investedAmount = unitPrice * shares;
         const payload = {
           name:               form.name,
           institution:        form.institution,
-          investedAmount:      parseFloat(form.investedAmount),
+          [isEdit ? 'currentPrice' : 'unitPrice']: unitPrice,
+          shares:             shares,
           investmentDate:      form.investmentDate,
           category:          selected.label,
-          currentPrice:       parseFloat(form.currentPrice),
-          shares:         parseFloat(form.shares),
           ticker:             form.ticker,
           dividendsReceived: parseFloat(form.dividendsReceived) || 0,
           notes:        form.notes,
         };
         if (isEdit) await api.updateVariableIncome(initialData.id, payload);
-        else await api.createInvestment(payload);
+        else await api.createVariableIncome(payload);
       }
       onSuccess()
       onClose()
@@ -162,81 +165,95 @@ export function AddModal({ onClose, onSuccess, initialData }) {
           </div>
         </Field>
 
-        {/* Common fields */}
-        <div className="grid grid-cols-2 gap-3">
-          <Field label={t('addModal.name')}>
-            <Input value={form.name} onChange={set('name')} required />
-          </Field>
-          <Field label={t('addModal.institution')}>
-            <Input value={form.institution} onChange={set('institution')} required />
-          </Field>
+        {/* Common Fields */}
+        <div className="border-t border-slate-700 pt-4">
+          <h3 className="text-sm font-semibold text-slate-300 mb-3">Common Information</h3>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label={t('addModal.name')}>
+              <Input value={form.name} onChange={set('name')} required />
+            </Field>
+            <Field label={t('addModal.institution')}>
+              <Input value={form.institution} onChange={set('institution')} required />
+            </Field>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label={t('addModal.investmentDate')}>
+              <Input type="date" value={form.investmentDate} onChange={set('investmentDate')} required />
+            </Field>
+            {isFixedIncome && (
+              <Field label="Maturity Date">
+                <Input type="date" value={form.maturityDate} onChange={set('maturityDate')} />
+              </Field>
+            )}
+          </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
-          <Field label={t('addModal.investedAmount')}>
-            <Input type="number" step="0.01" min="0" value={form.investedAmount}
-              onChange={set('investedAmount')} placeholder="0.00" required />
-          </Field>
-          <Field label={isFixedIncome ? t('addModal.currentValue') : t('addModal.averagePrice', 'Average Price')}>
-            <Input type="number" step={isFixedIncome ? '0.01' : '0.000001'} min="0"
-              value={isFixedIncome ? form.currentValue : form.currentPrice}
-              onChange={set(isFixedIncome ? 'currentValue' : 'currentPrice')}
-              placeholder={isFixedIncome ? '0.00' : '0.000000'}
-              {...(!isFixedIncome && { required: true })} />
-          </Field>
-        </div>
-
-        <div className="grid grid-cols-2 gap-3">
-          <Field label={t('addModal.investmentDate')}>
-            <Input type="date" value={form.investmentDate} onChange={set('investmentDate')} required />
-          </Field>
+        {/* Type-Specific Fields */}
+        <div className="border-t border-slate-700 pt-4">
+          <h3 className="text-sm font-semibold text-slate-300 mb-3">
+            {isFixedIncome ? 'Fixed Income Details' : 'Variable Income Details'}
+          </h3>
+          
           {isFixedIncome ? (
-            <Field label="Vencimento / Maturity">
-              <Input type="date" value={form.maturityDate} onChange={set('maturityDate')} />
-            </Field>
+            <>
+              <div className="grid grid-cols-2 gap-3">
+                <Field label={t('addModal.investedAmount')}>
+                  <Input type="number" step="0.01" min="0" value={form.investedAmount}
+                    onChange={set('investedAmount')} placeholder="0.00" required />
+                </Field>
+                <Field label={t('addModal.currentValue')}>
+                  <Input type="number" step="0.01" min="0" value={form.currentValue}
+                    onChange={set('currentValue')} placeholder="0.00" />
+                </Field>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="Indexer">
+                  <Select value={form.indexer} onChange={set('indexer')}>
+                    {INDEXERS_FI.map(i => <option key={i}>{i}</option>)}
+                  </Select>
+                </Field>
+                <Field label="Rate (% p.a.)">
+                  <Input type="number" step="0.01" value={form.contractedRate}
+                    onChange={set('contractedRate')} placeholder="Ex: 12.5" />
+                </Field>
+              </div>
+              <div className="grid grid-cols-1 gap-3">
+                <Field label="% of Indexer">
+                  <Input type="number" step="0.01" value={form.indexerPercentage}
+                    onChange={set('indexerPercentage')} placeholder="Ex: 110" />
+                </Field>
+              </div>
+            </>
           ) : (
-            <Field label={t('addModal.shares')}>
-              <Input type="number" step="0.000001" min="0" value={form.shares}
-                onChange={set('shares')} placeholder="0" required />
-            </Field>
+            <>
+              <div className="grid grid-cols-2 gap-3">
+                <Field label={t('addModal.ticker')}>
+                  <Input value={form.ticker} onChange={set('ticker')}
+                    placeholder="Ex: PETR4" style={{ textTransform: 'uppercase' }} required />
+                </Field>
+                <Field label="Unit Price">
+                  <Input type="number" step="0.000001" min="0" value={form.unitPrice}
+                    onChange={set('unitPrice')} placeholder="0.000000" required />
+                </Field>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="Quantity">
+                  <Input type="number" step="0.000001" min="0" value={form.shares}
+                    onChange={set('shares')} placeholder="0" required disabled={isEdit} />
+                </Field>
+                <Field label="Dividends Received">
+                  <Input type="number" step="0.01" min="0" value={form.dividendsReceived}
+                    onChange={set('dividendsReceived')} placeholder="0.00" />
+                </Field>
+              </div>
+              <div className="text-xs text-slate-500 mt-2">
+                Invested Amount will be calculated as Unit Price × Quantity
+              </div>
+            </>
           )}
         </div>
 
-        {/* Specific fields */}
-        {isFixedIncome ? (
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Indexer">
-              <Select value={form.indexer} onChange={set('indexer')}>
-                {INDEXERS_FI.map(i => <option key={i}>{i}</option>)}
-              </Select>
-            </Field>
-            <Field label="Rate (% p.a.)">
-              <Input type="number" step="0.01" value={form.contractedRate}
-                onChange={set('contractedRate')} placeholder="Ex: 12.5" />
-            </Field>
-            <Field label="% of Indexer">
-              <Input type="number" step="0.01" value={form.indexerPercentage}
-                onChange={set('indexerPercentage')} placeholder="Ex: 110" />
-            </Field>
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 gap-3">
-            <Field label={t('addModal.ticker')}>
-              <Input value={form.ticker} onChange={set('ticker')}
-                placeholder="Ex: PETR4" style={{ textTransform: 'uppercase' }} required />
-            </Field>
-            <Field label={t('addModal.shares')}>
-              <Input type="number" step="0.000001" min="0" value={form.shares}
-                onChange={set('shares')} placeholder="0" required />
-            </Field>
-            <Field label="Dividends Received">
-              <Input type="number" step="0.01" min="0" value={form.dividendsReceived}
-                onChange={set('dividendsReceived')} placeholder="0.00" />
-            </Field>
-          </div>
-        )}
-
-        <Field label="Notes / Observações">
+        <Field label="Notes">
           <Input value={form.notes} onChange={set('notes')} placeholder="Optional" />
         </Field>
 

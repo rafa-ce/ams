@@ -95,12 +95,13 @@ public static class InvestmentEndpoints
         {
             try
             {
+                decimal investedAmount = req.UnitPrice * req.Shares;
                 var entity = new VariableIncome(
-                    req.Name, req.Institution, req.CurrentPrice,
+                    req.Name, req.Institution, req.UnitPrice,
                     req.Category, req.Ticker,
                     req.DividendsReceived, req.Notes);
 
-                entity.AddTransaction(new Transaction(0, req.InvestedAmount, req.InvestmentDate, req.Shares, Math.Round(req.InvestedAmount / req.Shares, 6)));
+                entity.AddTransaction(new Transaction(0, investedAmount, req.InvestmentDate, req.Shares, req.UnitPrice));
 
                 await repo.AddAsync(entity, ct);
                 await repo.SaveChangesAsync(ct);
