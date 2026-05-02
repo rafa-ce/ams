@@ -1,8 +1,10 @@
+using System.Linq;
 using InvestimentosPessoais.Application.DTOs;
 using InvestimentosPessoais.Domain.Entities;
 using InvestimentosPessoais.Domain.Exceptions;
 using InvestimentosPessoais.Domain.Interfaces;
 using InvestimentosPessoais.Infrastructure.Persistence;
+using Microsoft.EntityFrameworkCore;
 
 namespace InvestimentosPessoais.WebAPI.Endpoints;
 
@@ -349,7 +351,15 @@ public static class InvestmentEndpoints
             try
             {
                 var transaction = new Transaction(0, req.Amount, req.PurchaseDate, req.Shares, req.UnitPrice);
-                inv.AddTransaction(transaction);
+                if (inv is VariableIncome vi)
+                {
+                    vi.RegisterPurchase(transaction);
+                }
+                else
+                {
+                    inv.AddTransaction(transaction);
+                }
+
                 repo.Update(inv);
                 await repo.SaveChangesAsync(ct);
                 return Results.Created(
@@ -391,6 +401,18 @@ public static class InvestmentEndpoints
 
                 dbTransaction.Update(req.Amount, req.PurchaseDate, req.Shares, req.UnitPrice);
                 await ctx.SaveChangesAsync(ct);
+
+                if (inv is VariableIncome vi)
+                {
+                    var totalShares = await ctx.Transactions
+                        .Where(t => t.InvestmentId == id)
+                        .SumAsync(t => t.Shares ?? 0, ct);
+
+                    vi.UpdateCurrentValue(vi.CurrentPrice * totalShares);
+                    repo.Update(inv);
+                    await repo.SaveChangesAsync(ct);
+                }
+
                 return Results.Ok(InvestmentMapper.ToTransactionDto(dbTransaction));
             }
             catch (DomainException ex)
@@ -424,6 +446,18 @@ public static class InvestmentEndpoints
 
             ctx.Transactions.Remove(dbTransaction);
             await ctx.SaveChangesAsync(ct);
+
+            if (inv is VariableIncome vi)
+            {
+                var totalShares = await ctx.Transactions
+                    .Where(t => t.InvestmentId == id)
+                    .SumAsync(t => t.Shares ?? 0, ct);
+
+                vi.UpdateCurrentValue(vi.CurrentPrice * totalShares);
+                repo.Update(inv);
+                await repo.SaveChangesAsync(ct);
+            }
+
             return Results.NoContent();
         })
         .WithName("RemoveTransaction")
