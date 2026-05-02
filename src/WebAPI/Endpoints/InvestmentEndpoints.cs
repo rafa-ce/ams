@@ -394,12 +394,7 @@ public static class InvestmentEndpoints
 
             try
             {
-                // Update transaction properties via DbContext
-                var dbTransaction = await ctx.Transactions.FindAsync(new object[] { transactionId }, ct);
-                if (dbTransaction is null)
-                    return Results.NotFound(new { message = $"Transaction {transactionId} not found." });
-
-                dbTransaction.Update(req.Amount, req.PurchaseDate, req.Shares, req.UnitPrice);
+                transaction.Update(req.Amount, req.PurchaseDate, req.Shares, req.UnitPrice);
                 await ctx.SaveChangesAsync(ct);
 
                 if (inv is VariableIncome vi)
@@ -413,7 +408,7 @@ public static class InvestmentEndpoints
                     await repo.SaveChangesAsync(ct);
                 }
 
-                return Results.Ok(InvestmentMapper.ToTransactionDto(dbTransaction));
+                return Results.Ok(InvestmentMapper.ToTransactionDto(transaction));
             }
             catch (DomainException ex)
             {
