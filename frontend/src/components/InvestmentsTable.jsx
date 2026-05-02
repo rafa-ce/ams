@@ -38,16 +38,169 @@ function ConfirmDeleteModal({ inv, onConfirm, onCancel }) {
   )
 }
 
+function EditTransactionModal({ investment, transaction, onClose, onSuccess }) {
+  const { t } = useTranslation()
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
+
+  const isVariableIncome = investment.investmentType === 'VariableIncome'
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    setLoading(true)
+    setError(null)
+
+    const formData = new FormData(e.target)
+    const amount = parseFloat(formData.get('amount'))
+    const purchaseDate = new Date(formData.get('purchaseDate')).toISOString()
+    
+    let body = {
+      amount,
+      purchaseDate,
+    }
+
+    if (isVariableIncome) {
+      const shares = parseFloat(formData.get('shares'))
+      const unitPrice = amount / shares
+      body.shares = shares
+      body.unitPrice = unitPrice
+    }
+
+    try {
+      await api.updateTransaction(investment.id, transaction.id, body)
+      onSuccess()
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+         style={{ background: 'rgba(0,0,0,0.7)' }}>
+      <div className="bg-[#111827] border border-slate-700 rounded-2xl p-6 w-full max-w-md">
+        <div className="flex items-center justify-between mb-5">
+          <h2 className="text-lg font-semibold text-white">
+            {t('transactionModal.editTitle')}
+          </h2>
+          <button onClick={onClose}
+            className="text-slate-500 hover:text-white transition-colors">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        {error && (
+          <div className="bg-rose-500/10 border border-rose-500/30 rounded-xl p-3 mb-4">
+            <p className="text-rose-400 text-sm">{error}</p>
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit}>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-xs font-medium text-slate-400 mb-1.5">
+                {t('transactionModal.amount')}
+              </label>
+              <input
+                type="number"
+                name="amount"
+                step="0.01"
+                min="0"
+                required
+                defaultValue={transaction.amount}
+                className="w-full px-3 py-2.5 rounded-xl bg-slate-800 border border-slate-700
+                  text-white text-sm placeholder-slate-500
+                  focus:outline-none focus:border-sky-500/50 focus:ring-1 focus:ring-sky-500/25"
+                placeholder="0,00"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-slate-400 mb-1.5">
+                {t('transactionModal.date')}
+              </label>
+              <input
+                type="date"
+                name="purchaseDate"
+                required
+                defaultValue={new Date(transaction.purchaseDate).toISOString().split('T')[0]}
+                className="w-full px-3 py-2.5 rounded-xl bg-slate-800 border border-slate-700
+                  text-white text-sm
+                  focus:outline-none focus:border-sky-500/50 focus:ring-1 focus:ring-sky-500/25"
+              />
+            </div>
+
+            {isVariableIncome && (
+              <div>
+                <label className="block text-xs font-medium text-slate-400 mb-1.5">
+                  {t('transactionModal.shares')}
+                </label>
+                <input
+                  type="number"
+                  name="shares"
+                  step="0.000001"
+                  min="0"
+                  required
+                  defaultValue={transaction.shares || ''}
+                  className="w-full px-3 py-2.5 rounded-xl bg-slate-800 border border-slate-700
+                    text-white text-sm placeholder-slate-500
+                    focus:outline-none focus:border-sky-500/50 focus:ring-1 focus:ring-sky-500/25"
+                  placeholder="0"
+                />
+                <p className="text-xs text-slate-500 mt-1">
+                  {t('transactionModal.unitPriceHint')}
+                </p>
+              </div>
+            )}
+          </div>
+
+          <div className="flex gap-3 mt-6">
+            <button type="button" onClick={onClose}
+              className="flex-1 py-2.5 rounded-xl border border-slate-700 text-slate-400
+                hover:bg-slate-800 text-sm font-semibold transition-all">
+              {t('addModal.cancel')}
+            </button>
+            <button type="submit" disabled={loading}
+              className="flex-1 py-2.5 rounded-xl bg-sky-500 hover:bg-sky-400
+                text-white text-sm font-bold transition-all disabled:opacity-50">
+              {loading ? t('addModal.saving') : t('addModal.save')}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
 // Sub-table component for transactions
-function TransactionSubTable({ transactions, investmentType, onDeleteTransaction, onRefresh }) {
+function TransactionSubTable({ transactions, investmentType, investmentId, onRefresh }) {
   const { t } = useTranslation()
   const [deletingId, setDeletingId] = useState(null)
+  const [editingTransaction, setEditingTransaction] = useState(null)
+  const [viewingTransaction, setViewingTransaction] = useState(null)
 
   const handleDelete = async (transactionId) => {
     setDeletingId(transactionId)
-    // Note: We need the investment ID to delete, but it's not passed here
-    // For now, we'll skip the delete in the sub-table
-    setDeletingId(null)
+    try {
+      await api.removeTransaction(investmentId, transactionId)
+      onRefresh()
+    } catch (error) {
+      console.error('Failed to delete transaction:', error)
+      // Could show error message here
+    } finally {
+      setDeletingId(null)
+    }
+  }
+
+  const handleView = (transaction) => {
+    setViewingTransaction(transaction)
+  }
+
+  const handleEdit = (transaction) => {
+    setEditingTransaction(transaction)
   }
 
   if (!transactions || transactions.length === 0) {
@@ -61,54 +214,166 @@ function TransactionSubTable({ transactions, investmentType, onDeleteTransaction
   }
 
   return (
-    <tr className="bg-slate-800/20">
-      <td colSpan="9" className="p-0">
-        <div className="bg-slate-900/50 border-t border-slate-700">
-          <table className="w-full text-xs">
-            <thead>
-              <tr className="text-[10px] font-bold uppercase tracking-wider text-slate-500 border-b border-slate-800">
-                <th className="px-6 py-2 text-left">{t('table.transactionDate')}</th>
-                <th className="px-6 py-2 text-right">{t('table.transactionAmount')}</th>
-                {investmentType === 'VariableIncome' && (
-                  <>
-                    <th className="px-6 py-2 text-right">{t('table.shares')}</th>
-                    <th className="px-6 py-2 text-right">{t('table.unitPrice')}</th>
-                  </>
-                )}
-                <th className="px-6 py-2 text-center">{t('table.actions')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {transactions.map((tx, idx) => (
-                <tr key={tx.id} className={`border-b border-slate-800/40 ${idx % 2 === 0 ? '' : 'bg-slate-900/20'}`}>
-                  <td className="px-6 py-2.5 text-slate-400">
-                    {dt(tx.purchaseDate)}
-                  </td>
-                  <td className="px-6 py-2.5 text-right text-white font-medium tabular">
-                    {brl(tx.amount)}
-                  </td>
+    <>
+      <tr className="bg-slate-800/20">
+        <td colSpan="9" className="p-0">
+          <div className="bg-slate-900/50 border-t border-slate-700">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="text-[10px] font-bold uppercase tracking-wider text-slate-500 border-b border-slate-800">
+                  <th className="px-6 py-2 text-left">{t('table.transactionDate')}</th>
+                  <th className="px-6 py-2 text-right">{t('table.transactionAmount')}</th>
                   {investmentType === 'VariableIncome' && (
                     <>
-                      <td className="px-6 py-2.5 text-right text-slate-400 tabular">
-                        {tx.shares ? num(tx.shares) : '—'}
-                      </td>
-                      <td className="px-6 py-2.5 text-right text-slate-400 tabular">
-                        {tx.unitPrice ? brl(tx.unitPrice) : '—'}
-                      </td>
+                      <th className="px-6 py-2 text-right">{t('table.shares')}</th>
+                      <th className="px-6 py-2 text-right">{t('table.unitPrice')}</th>
                     </>
                   )}
-                  <td className="px-6 py-2.5 text-center">
-                    <span className="text-slate-600 text-xs">
-                      {t('table.viewOnly')}
-                    </span>
-                  </td>
+                  <th className="px-6 py-2 text-center">{t('table.actions')}</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {transactions.map((tx, idx) => (
+                  <tr key={tx.id} className={`border-b border-slate-800/40 ${idx % 2 === 0 ? '' : 'bg-slate-900/20'}`}>
+                    <td className="px-6 py-2.5 text-slate-400">
+                      {dt(tx.purchaseDate)}
+                    </td>
+                    <td className="px-6 py-2.5 text-right text-white font-medium tabular">
+                      {brl(tx.amount)}
+                    </td>
+                    {investmentType === 'VariableIncome' && (
+                      <>
+                        <td className="px-6 py-2.5 text-right text-slate-400 tabular">
+                          {tx.shares ? num(tx.shares) : '—'}
+                        </td>
+                        <td className="px-6 py-2.5 text-right text-slate-400 tabular">
+                          {tx.unitPrice ? brl(tx.unitPrice) : '—'}
+                        </td>
+                      </>
+                    )}
+                    <td className="px-6 py-2.5 text-center space-x-1">
+                      <button
+                        onClick={() => handleView(tx)}
+                        className="text-slate-500 hover:text-sky-400 transition-colors p-1 rounded"
+                        title={t('table.view')}
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                      </button>
+                      <button
+                        onClick={() => handleEdit(tx)}
+                        className="text-slate-500 hover:text-emerald-400 transition-colors p-1 rounded"
+                        title={t('table.edit')}
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                      </button>
+                      <button
+                        onClick={() => setDeletingId(tx.id)}
+                        disabled={deletingId === tx.id}
+                        className="text-slate-500 hover:text-rose-400 transition-colors p-1 rounded disabled:opacity-50"
+                        title={t('table.delete')}
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </td>
+      </tr>
+
+      {/* View Transaction Modal */}
+      {viewingTransaction && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+             style={{ background: 'rgba(0,0,0,0.7)' }}>
+          <div className="bg-[#111827] border border-slate-700 rounded-2xl p-6 w-full max-w-sm">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-white">
+                {t('transactionModal.viewTitle')}
+              </h2>
+              <button onClick={() => setViewingTransaction(null)}
+                className="text-slate-500 hover:text-white transition-colors">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="space-y-3">
+              <div>
+                <div className="text-xs text-slate-500">{t('transactionModal.date')}</div>
+                <div className="text-white">{dt(viewingTransaction.purchaseDate)}</div>
+              </div>
+              <div>
+                <div className="text-xs text-slate-500">{t('transactionModal.amount')}</div>
+                <div className="text-white font-semibold">{brl(viewingTransaction.amount)}</div>
+              </div>
+              {investmentType === 'VariableIncome' && (
+                <>
+                  <div>
+                    <div className="text-xs text-slate-500">{t('transactionModal.shares')}</div>
+                    <div className="text-white">{viewingTransaction.shares ? num(viewingTransaction.shares) : '—'}</div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-slate-500">{t('transactionModal.unitPrice')}</div>
+                    <div className="text-white">{viewingTransaction.unitPrice ? brl(viewingTransaction.unitPrice) : '—'}</div>
+                  </div>
+                </>
+              )}
+            </div>
+            <button onClick={() => setViewingTransaction(null)}
+              className="w-full mt-6 py-2 rounded-xl bg-slate-700 hover:bg-slate-600 text-white text-sm font-semibold transition-all">
+              {t('addModal.close')}
+            </button>
+          </div>
         </div>
-      </td>
-    </tr>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deletingId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+             style={{ background: 'rgba(0,0,0,0.7)' }}>
+          <div className="bg-[#111827] border border-slate-700 rounded-2xl p-6 w-full max-w-sm">
+            <p className="text-white font-semibold mb-1">{t('table.deleteTransactionConfirm')}</p>
+            <p className="text-slate-400 text-sm mb-5">
+              {t('table.deleteTransactionMessage')}
+            </p>
+            <div className="flex gap-3">
+              <button onClick={() => setDeletingId(null)}
+                className="flex-1 py-2 rounded-xl border border-slate-700 text-slate-400
+                  hover:bg-slate-800 text-sm font-semibold transition-all">
+                {t('addModal.cancel')}
+              </button>
+              <button onClick={() => handleDelete(deletingId)} disabled={deletingId === null}
+                className="flex-1 py-2 rounded-xl bg-rose-500 hover:bg-rose-400
+                  text-white text-sm font-bold transition-all disabled:opacity-50">
+                {t('table.actions')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Transaction Modal */}
+      {editingTransaction && (
+        <EditTransactionModal
+          investment={{ id: investmentId, investmentType }}
+          transaction={editingTransaction}
+          onClose={() => setEditingTransaction(null)}
+          onSuccess={() => {
+            setEditingTransaction(null)
+            onRefresh()
+          }}
+        />
+      )}
+    </>
   )
 }
 
@@ -318,6 +583,8 @@ export function InvestmentsTable({ investments = [], loading, onRefresh, onEdit 
                           key={`sub-${inv.id}`}
                           transactions={inv.transactions}
                           investmentType={inv.investmentType}
+                          investmentId={inv.id}
+                          onRefresh={onRefresh}
                         />
                       )}
                     </>
