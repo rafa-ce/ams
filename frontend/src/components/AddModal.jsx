@@ -56,19 +56,47 @@ export function AddModal({ onClose, onSuccess, initialData }) {
     contractedRate: initialData?.contractedRate || '', 
     indexerPercentage: initialData?.indexerPercentage || '',
     // Variable Income specific
-    unitPrice: initialData?.currentPrice || '', 
+    investedAmountVI: initialData?.investedAmount || '', 
     shares: initialData?.shares || '', 
     ticker: initialData?.ticker || '', 
     dividendsReceived: initialData?.dividendsReceived || '0',
   })
+  const [currentValueTouched, setCurrentValueTouched] = useState(false)
 
-  const set = (k) => (e) => setForm(f => ({ ...f, [k]: e.target.value }))
+  const set = (k) => (e) => {
+    if (k === 'currentValue') setCurrentValueTouched(true)
+    setForm(f => ({ ...f, [k]: e.target.value }))
+  }
 
   const selectedCategory = findCategoryOption(form.category) || findCategoryOption(categoryInput) || CATEGORY_OPTIONS[0]
   const isFixedIncome = selectedCategory.investmentType === 'FixedIncome'
   const filteredCategories = CATEGORY_OPTIONS.filter(option =>
     normalizeText(t(`categories.${option.label}`, option.label)).includes(normalizeText(categoryInput))
   )
+
+  const investedAmount = isFixedIncome ? form.investedAmount : form.investedAmountVI
+  const calculatedUnitPrice = form.shares && parseFloat(form.shares) > 0 && investedAmount && parseFloat(investedAmount) > 0
+    ? (parseFloat(investedAmount) / parseFloat(form.shares)).toFixed(6)
+    : '0.000000'
+
+  useEffect(() => {
+    if (isEdit || currentValueTouched) return
+
+    if (isFixedIncome) {
+      const invested = parseFloat(form.investedAmount)
+      if (!Number.isNaN(invested)) {
+        const value = invested.toFixed(2)
+        if (form.currentValue !== value) setForm(f => ({ ...f, currentValue: value }))
+      }
+      return
+    }
+
+    const invested = parseFloat(form.investedAmountVI)
+    if (!Number.isNaN(invested)) {
+      const value = invested.toFixed(2)
+      if (form.currentValue !== value) setForm(f => ({ ...f, currentValue: value }))
+    }
+  }, [isEdit, isFixedIncome, currentValueTouched, form.investedAmount, form.investedAmountVI, form.currentValue])
 
   const submit = async (e) => {
     e.preventDefault()
@@ -98,19 +126,24 @@ export function AddModal({ onClose, onSuccess, initialData }) {
         if (isEdit) await api.updateFixedIncome(initialData.id, payload);
         else await api.createFixedIncome(payload);
       } else {
-        const unitPrice = parseFloat(form.unitPrice);
+        const investedAmount = parseFloat(form.investedAmountVI);
         const shares = parseFloat(form.shares);
-        const investedAmount = unitPrice * shares;
+        const currentValue = parseFloat(form.currentValue);
+        const unitPrice = shares > 0 ? investedAmount / shares : 0;
+        const currentPrice = !Number.isNaN(currentValue) && shares > 0
+          ? currentValue / shares
+          : unitPrice;
+
         const payload = {
           name:               form.name,
           institution:        form.institution,
-          [isEdit ? 'currentPrice' : 'unitPrice']: unitPrice,
+          [isEdit ? 'currentPrice' : 'unitPrice']: currentPrice,
           shares:             shares,
           investmentDate:      form.investmentDate,
           category:          selected.label,
           ticker:             form.ticker,
-          dividendsReceived: parseFloat(form.dividendsReceived) || 0,
-          notes:        form.notes,
+          dividendsReceived:  parseFloat(form.dividendsReceived) || 0,
+          notes:               form.notes,
         };
         if (isEdit) await api.updateVariableIncome(initialData.id, payload);
         else await api.createVariableIncome(payload);
@@ -231,9 +264,19 @@ export function AddModal({ onClose, onSuccess, initialData }) {
                   <Input value={form.ticker} onChange={set('ticker')}
                     placeholder="Ex: PETR4" style={{ textTransform: 'uppercase' }} required />
                 </Field>
-                <Field label={t('addModal.unitPriceLabel')}>
-                  <Input type="number" step="0.000001" min="0" value={form.unitPrice}
-                    onChange={set('unitPrice')} placeholder="0.000000" required />
+                <Field label={t('addModal.investedAmount')}>
+                  <Input type="number" step="0.01" min="0" value={form.investedAmountVI}
+                    onChange={set('investedAmountVI')} placeholder="0.00" required />
+                </Field>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <Field label={t('addModal.currentValue')}>
+                  <Input type="number" step="0.01" min="0" value={form.currentValue}
+                    onChange={set('currentValue')} placeholder="0.00" />
+                </Field>
+                <Field label={t('addModal.dividendsReceived')}>
+                  <Input type="number" step="0.01" min="0" value={form.dividendsReceived}
+                    onChange={set('dividendsReceived')} placeholder="0.00" />
                 </Field>
               </div>
               <div className="grid grid-cols-2 gap-3">
@@ -241,13 +284,12 @@ export function AddModal({ onClose, onSuccess, initialData }) {
                   <Input type="number" step="0.000001" min="0" value={form.shares}
                     onChange={set('shares')} placeholder="0" required disabled={isEdit} />
                 </Field>
-                <Field label={t('addModal.dividendsReceived')}>
-                  <Input type="number" step="0.01" min="0" value={form.dividendsReceived}
-                    onChange={set('dividendsReceived')} placeholder="0.00" />
+                <Field label={t('addModal.unitPriceLabel')}>
+                  <Input type="number" step="0.000001" value={calculatedUnitPrice} readOnly placeholder="0.000000" />
                 </Field>
               </div>
               <div className="text-xs text-slate-500 mt-2">
-                {t('addModal.investedCalculation')}
+                {t('addModal.unitPriceCalculation')}
               </div>
             </>
           )}

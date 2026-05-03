@@ -62,6 +62,7 @@ const resources = {
         quantityLabel: "Quantity",
         dividendsReceived: "Dividends Received",
         investedCalculation: "Invested Amount will be calculated as Unit Price × Quantity",
+        unitPriceCalculation: "Unit Price will be calculated as Invested Amount / Quantity",
         notes: "Notes",
         searchCategory: "Search category...",
         selectValidCategory: "Please select a valid category."
@@ -188,6 +189,7 @@ const resources = {
         quantityLabel: "Quantidade",
         dividendsReceived: "Dividendos Recebidos",
         investedCalculation: "O valor aplicado será calculado como Preço Unitário × Quantidade",
+        unitPriceCalculation: "O Preço Unitário será calculado como Valor Aplicado / Quantidade",
         notes: "Observações",
         searchCategory: "Buscar categoria...",
         selectValidCategory: "Por favor, selecione uma categoria válida."
