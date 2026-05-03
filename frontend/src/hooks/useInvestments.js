@@ -17,15 +17,10 @@ async function apiFetch(path, options = {}) {
 
 export const api = {
   list:            ()       => apiFetch('/investments'),
-  get:             (id)     => apiFetch(`/investments/${id}`),
-  createInvestment:    (body)   => apiFetch('/investments', { method: 'POST',  body: JSON.stringify(body) }),
   createFixedIncome:    (body)   => apiFetch('/investments/fixed-income',    { method: 'POST',  body: JSON.stringify(body) }),
   createVariableIncome:(body)   => apiFetch('/investments/variable-income', { method: 'POST',  body: JSON.stringify(body) }),
   updateFixedIncome:    (id, body) => apiFetch(`/investments/${id}/fixed-income`, { method: 'PUT', body: JSON.stringify(body) }),
   updateVariableIncome: (id, body) => apiFetch(`/investments/${id}/variable-income`, { method: 'PUT', body: JSON.stringify(body) }),
-  updateValue:    (id, v)  => apiFetch(`/investments/${id}/value`,    { method: 'PATCH', body: JSON.stringify({ newValue: v }) }),
-  updatePrice:  (id, v)  => apiFetch(`/investments/${id}/price`,  { method: 'PATCH', body: JSON.stringify({ newPrice: v }) }),
-  registerDividend: (id, v)  => apiFetch(`/investments/${id}/dividends`,{ method: 'POST',  body: JSON.stringify({ amount: v }) }),
   remove:           (id)     => apiFetch(`/investments/${id}`,          { method: 'DELETE' }),
   // Transaction methods
   createTransaction:    (id, body) => apiFetch(`/investments/${id}/transactions`, { method: 'POST', body: JSON.stringify(body) }),
